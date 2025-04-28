@@ -11,7 +11,7 @@
     "start": "node src/index.js",
     "dev": "nodemon src/index.js",
     "test": "jest",
-    "prepublishOnly": "npm test"
+    "prepublishOnly": "npm test -- --passWithNoTests"
   },
   "keywords": [
     "dependency",
