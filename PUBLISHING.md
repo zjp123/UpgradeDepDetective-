@@ -34,6 +34,14 @@
    upgrade-lens --help
    ```
 
+   **注意**：如果遇到以下错误：
+   ```
+   TypeError [ERR_IMPORT_ASSERTION_TYPE_MISSING]: Module "file:///path/to/package.json" needs an import attribute of type "json"
+   ```
+   这是因为在ESM模块中导入JSON文件需要添加类型断言。解决方法：
+   - 确保package.json中已设置`"type": "module"`
+   - 在导入JSON文件时添加断言：`import { version } from '../package.json' assert { type: 'json' };`
+
 3. 检查哪些文件会被发布到npm：
    ```bash
    npm pack

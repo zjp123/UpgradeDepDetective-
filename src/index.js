@@ -6,7 +6,17 @@ import inquirer from 'inquirer';
 import { analyzeProject } from './analyzer.js';
 import { checkCompatibility } from './compatibility.js';
 import { generateReport } from './report.js';
-import { version } from '../package.json';
+import fs from 'fs';
+import { fileURLToPath } from 'url';
+import { dirname, resolve } from 'path';
+
+// 获取当前文件的目录
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
+
+// 读取package.json
+const packageJson = JSON.parse(fs.readFileSync(resolve(__dirname, '../package.json'), 'utf8'));
+const { version } = packageJson;
 
 const program = new Command();
 
