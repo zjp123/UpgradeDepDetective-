@@ -1,6 +1,6 @@
 {
   "name": "upgrade-lens",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "前端项目依赖版本兼容性检测工具",
   "main": "src/index.js",
   "type": "module",
