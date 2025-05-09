@@ -22,6 +22,22 @@ export async function checkCompatibility(projectInfo, deep = false) {
   for (const [dep, version] of Object.entries(dependencies)) {
     try {
       const packageInfo = await getPackageInfo(dep);
+      //如：
+      // {
+      //   name: 'axios',
+      //   version: '1.2.3',
+      //   description: 'Axios is a promise-based HTTP client for the browser and node.js.',
+      //   keywords: ['http', 'promise', 'client'],
+      //   repository: {
+      //     type: 'git',   // 仓库类型
+      //     url: '// 仓库类型
+      //     url: 'URL_ADDRESS.com/axios/axios.git'  // 仓库URL
+      // // 仓库类型
+      //     url: 'URL_ADDRESS.com/axios/axios.git'  // 仓库URL
+      //   },
+      //   homepage: 'URL_ADDRESS   homepage: 'https://github.com/axios/axios#readme',
+      //   bugs: {  // 问题报告
+      //     url: 'URL_ADDRESS   bugs: {   // 问题报告  
       dependencyDetails[dep] = packageInfo;
       process.stdout.write(chalk.green('.'));
     } catch (error) {
@@ -40,6 +56,7 @@ export async function checkCompatibility(projectInfo, deep = false) {
   const depNames = Object.keys(dependencies);
   
   // 生成所有依赖对
+  // 例如，[['axios', 'chalk'], ['axios', 'inquire'], ...]
   for (let i = 0; i < depNames.length; i++) {
     for (let j = i + 1; j < depNames.length; j++) {
       dependencyPairs.push([depNames[i], depNames[j]]);
@@ -48,6 +65,7 @@ export async function checkCompatibility(projectInfo, deep = false) {
   
   // 检查每对依赖的兼容性
   for (const [dep1, dep2] of dependencyPairs) {
+    // 两两检测兼容性如：axios@1.2.3 和 chalk@4.2.0
     const result = await checkPairCompatibility(
       dep1, dependencies[dep1], 
       dep2, dependencies[dep2],
@@ -152,7 +170,7 @@ async function checkPairCompatibility(dep1, version1, dep2, version2, dependency
     return result;
   }
   
-  // 获取特定版本的信息
+  // 获取特定版本的信息，从所有版本中找到对应版本信息
   const version1Info = details1.versions[cleanVersion1] || findClosestVersion(details1, cleanVersion1);
   const version2Info = details2.versions[cleanVersion2] || findClosestVersion(details2, cleanVersion2);
   
