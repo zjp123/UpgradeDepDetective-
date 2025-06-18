@@ -25,12 +25,12 @@
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "https://github.com/yourusername/upgrade-lens"
+    "url": "https://github.com/zjp123/UpgradeDepDetective-"
   },
   "bugs": {
-    "url": "https://github.com/yourusername/upgrade-lens/issues"
+    "url": "https://github.com/zjp123/UpgradeDepDetective-/issues"
   },
-  "homepage": "https://github.com/yourusername/upgrade-lens#readme",
+  "homepage": "https://github.com/zjp123/UpgradeDepDetective-/blob/main/README.md",
   "dependencies": {
     "axios": "^1.6.2",
     "chalk": "^5.3.0",
