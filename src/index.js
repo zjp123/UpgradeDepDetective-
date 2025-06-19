@@ -1,11 +1,14 @@
 #!/usr/bin/env node
 
-import { Command } from 'commander';
-import chalk from 'chalk';
-import inquirer from 'inquirer';
+import { Command } from 'commander'; // 命令行解析
+import chalk from 'chalk'; // 打印彩色日志
+import inquirer from 'inquirer'; // 交互式命令行
 import { analyzeProject } from './analyzer.js';
 import { checkCompatibility } from './compatibility.js';
 import { generateReport } from './report.js';
+import { pluginManager } from './plugin-manager.js';
+import { HOOKS } from './plugin-interface.js';
+import { pluginCLI } from './plugin-cli.js';
 import fs from 'fs';
 import { fileURLToPath } from 'url';
 import { dirname, resolve } from 'path';
@@ -23,7 +26,56 @@ const program = new Command();
 program
   .name('upgrade-lens')
   .description('前端项目依赖版本兼容性检测工具')
-  .version(version)
+  .version(version);
+
+// 插件管理命令
+const pluginCommand = program
+  .command('plugin')
+  .description('插件管理');
+
+pluginCommand
+  .command('list')
+  .description('列出所有插件')
+  .action(async () => {
+    await pluginCLI.listPlugins();
+  });
+
+pluginCommand
+  .command('enable <name>')
+  .description('启用插件')
+  .action(async (name) => {
+    await pluginCLI.enablePlugin(name);
+  });
+
+pluginCommand
+  .command('disable <name>')
+  .description('禁用插件')
+  .action(async (name) => {
+    await pluginCLI.disablePlugin(name);
+  });
+
+pluginCommand
+  .command('config <name>')
+  .description('配置插件')
+  .action(async (name) => {
+    await pluginCLI.configurePlugin(name);
+  });
+
+pluginCommand
+  .command('create <name>')
+  .description('创建新插件')
+  .action(async (name) => {
+    await pluginCLI.createPlugin(name);
+  });
+
+pluginCommand
+  .command('remove <name>')
+  .description('删除插件')
+  .action(async (name) => {
+    await pluginCLI.removePlugin(name);
+  });
+
+program
   .option('-p, --path <path>', '指定项目路径', process.cwd())
   .option('-d, --deep', '深度分析依赖关系', false)
   .option('-i, --interactive', '交互式分析模式', false)
@@ -34,9 +86,21 @@ program
     console.log(chalk.blue('==================================='));
     
     try {
+      // 加载插件
+      console.log(chalk.blue('\n🔌 正在加载插件...'));
+      await pluginManager.loadAllPlugins();
+      
       // 分析项目依赖
       console.log(chalk.yellow('\n📦 正在分析项目依赖...'))
+      
+      // 执行分析前钩子
+      let projectData = { projectPath: options.path };
+      projectData = await pluginManager.executeHook(HOOKS.BEFORE_ANALYZE, projectData);
+      
       const projectInfo = await analyzeProject(options.path);
+      
+      // 执行分析后钩子
+      const enhancedProjectInfo = await pluginManager.executeHook(HOOKS.AFTER_ANALYZE, projectInfo);
       
       // 交互式模式
       if (options.interactive) {
@@ -60,18 +124,34 @@ program
         // 过滤选中的依赖
         const filteredDeps = {};
         answers.dependencies.forEach(dep => {
-          filteredDeps[dep] = projectInfo.dependencies[dep];
+          filteredDeps[dep] = enhancedProjectInfo.dependencies[dep];
         });
-        projectInfo.dependencies = filteredDeps;
+        enhancedProjectInfo.dependencies = filteredDeps;
       }
       
       // 检查兼容性
       console.log(chalk.yellow('\n🔍 正在检查依赖兼容性...'))
-      const compatibilityResults = await checkCompatibility(projectInfo, options.deep);
+      
+      // 执行兼容性检查前钩子
+      let checkData = { ...enhancedProjectInfo, deep: options.deep };
+      checkData = await pluginManager.executeHook(HOOKS.BEFORE_COMPATIBILITY_CHECK, checkData);
+      
+      const compatibilityResults = await checkCompatibility(enhancedProjectInfo, options.deep);
+      
+      // 执行兼容性检查后钩子
+      const enhancedResults = await pluginManager.executeHook(HOOKS.AFTER_COMPATIBILITY_CHECK, compatibilityResults);
       
       // 生成报告
       console.log(chalk.yellow('\n📊 正在生成兼容性报告...'))
-      await generateReport(compatibilityResults, options.output);
+      
+      // 执行报告生成前钩子
+      let reportData = { ...enhancedResults, outputPath: options.output };
+      reportData = await pluginManager.executeHook(HOOKS.BEFORE_REPORT_GENERATION, reportData);
+      
+      await generateReport(reportData, options.output);
+      
+      // 执行报告生成后钩子
+      await pluginManager.executeHook(HOOKS.AFTER_REPORT_GENERATION, reportData);
       
       console.log(chalk.green('\n✅ 分析完成!'));
     } catch (error) {

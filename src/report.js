@@ -1,5 +1,7 @@
 import fs from 'fs/promises';
 import chalk from 'chalk';
+import { pluginManager } from './plugin-manager.js';
+import { HOOKS } from './plugin-interface.js';
 
 /**
  * 生成兼容性报告
@@ -9,6 +11,17 @@ import chalk from 'chalk';
  */
 export async function generateReport(compatibilityResults, outputFile) {
   const { compatible, incompatible, unknown, recommendations, upgradeAnalysis } = compatibilityResults;
+  
+  // 执行报告格式化钩子
+  let reportData = {
+    content: '',
+    format: 'markdown',
+    outputPath: outputFile,
+    additionalReports: [],
+    ...compatibilityResults
+  };
+  
+  reportData = await pluginManager.executeHook(HOOKS.FORMAT_REPORT, reportData);
   
   // 控制台输出报告
   console.log(chalk.blue('\n📊 依赖兼容性分析报告'));
@@ -115,10 +128,23 @@ export async function generateReport(compatibilityResults, outputFile) {
     }
   }
   
+  // 显示插件添加的额外报告
+  if (reportData.additionalReports && reportData.additionalReports.length > 0) {
+    reportData.additionalReports.forEach(report => {
+      console.log(report);
+    });
+  }
+  
   // 如果指定了输出文件，将报告写入文件
   if (outputFile) {
     try {
-      const reportContent = generateMarkdownReport(compatibilityResults);
+      let reportContent = generateMarkdownReport(compatibilityResults);
+      
+      // 如果插件修改了报告内容，使用插件的内容
+      if (reportData.content) {
+        reportContent += reportData.content;
+      }
+      
       await fs.writeFile(outputFile, reportContent, 'utf-8');
       console.log(chalk.green(`\n📄 报告已保存到: ${outputFile}`));
     } catch (error) {

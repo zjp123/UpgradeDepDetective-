@@ -1,0 +1,39 @@
+{
+  "name": "test-react-project",
+  "version": "1.0.0",
+  "description": "测试React项目用于验证插件功能",
+  "main": "index.js",
+  "scripts": {
+    "start": "react-scripts start",
+    "build": "react-scripts build",
+    "test": "react-scripts test",
+    "eject": "react-scripts eject"
+  },
+  "dependencies": {
+    "react": "^18.2.0",
+    "react-dom": "^17.0.2",
+    "react-router-dom": "^6.8.0",
+    "lodash": "^4.17.10",
+    "axios": "^0.21.0",
+    "express": "^4.16.0",
+    "minimist": "^1.2.0"
+  },
+  "devDependencies": {
+    "@types/react": "^18.0.0",
+    "@types/react-dom": "^17.0.0",
+    "react-scripts": "^5.0.1",
+    "typescript": "^4.9.0"
+  },
+  "browserslist": {
+    "production": [
+      ">0.2%",
+      "not dead",
+      "not op_mini all"
+    ],
+    "development": [
+      "last 1 chrome version",
+      "last 1 firefox version",
+      "last 1 safari version"
+    ]
+  }
+}

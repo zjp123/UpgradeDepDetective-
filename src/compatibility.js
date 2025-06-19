@@ -1,6 +1,8 @@
-import semver from 'semver';
+import semver from 'semver'; // semver - 语义化版本处理
 import chalk from 'chalk';
 import { getPackageInfo } from './analyzer.js';
+import { pluginManager } from './plugin-manager.js';
+import { HOOKS } from './plugin-interface.js';
 
 /**
  * 检查依赖兼容性
@@ -51,6 +53,14 @@ export async function checkCompatibility(projectInfo, deep = false) {
   
   console.log('\n');
   
+  // 执行自定义检查钩子
+  const customCheckData = {
+    dependencies,
+    latestVersions,
+    dependencyDetails
+  };
+  const enhancedData = await pluginManager.executeHook(HOOKS.CUSTOM_CHECK, customCheckData);
+  
   // 分析依赖之间的兼容性
   const dependencyPairs = [];
   const depNames = Object.keys(dependencies);
@@ -66,11 +76,25 @@ export async function checkCompatibility(projectInfo, deep = false) {
   // 检查每对依赖的兼容性
   for (const [dep1, dep2] of dependencyPairs) {
     // 两两检测兼容性如：axios@1.2.3 和 chalk@4.2.0
+    let pairData = {
+      dep1,
+      dep2,
+      version1: dependencies[dep1],
+      version2: dependencies[dep2],
+      compatible: true,
+      reason: '',
+      severity: 'info'
+    };
+    
+    // 执行依赖对兼容性检查钩子
+    pairData = await pluginManager.executeHook(HOOKS.CHECK_PAIR_COMPATIBILITY, pairData);
+    
     const result = await checkPairCompatibility(
       dep1, dependencies[dep1], 
       dep2, dependencies[dep2],
       dependencyDetails,
-      latestVersions
+      latestVersions,
+      pairData // 传递插件处理后的数据
     );
     
     if (result.compatible) {
@@ -147,9 +171,10 @@ export async function checkCompatibility(projectInfo, deep = false) {
  * @param {string} version2 - 依赖2版本
  * @param {Object} dependencyDetails - 依赖详细信息
  * @param {Object} latestVersions - 最新版本信息
+ * @param {Object} pluginData - 插件处理的数据
  * @returns {Promise<Object>} - 兼容性结果
  */
-async function checkPairCompatibility(dep1, version1, dep2, version2, dependencyDetails, latestVersions) {
+async function checkPairCompatibility(dep1, version1, dep2, version2, dependencyDetails, latestVersions, pluginData = {}) {
   // 清理版本号
   const cleanVersion1 = version1.replace(/[^\d.]/g, '');
   const cleanVersion2 = version2.replace(/[^\d.]/g, '');
@@ -157,8 +182,15 @@ async function checkPairCompatibility(dep1, version1, dep2, version2, dependency
   // 基本结果对象
   const result = {
     pair: `${dep1}@${cleanVersion1} 和 ${dep2}@${cleanVersion2}`,
-    compatible: true
+    compatible: pluginData.compatible !== undefined ? pluginData.compatible : true,
+    reason: pluginData.reason || '',
+    severity: pluginData.severity || 'info'
   };
+  
+  // 如果插件已经标记为不兼容，直接返回
+  if (pluginData.compatible === false) {
+    return result;
+  }
   
   // 检查peerDependencies
   const details1 = dependencyDetails[dep1];

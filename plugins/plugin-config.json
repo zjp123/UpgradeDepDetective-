@@ -1,0 +1,34 @@
+{
+  "global": {
+    "timeout": 5000,
+    "enableLogging": true,
+    "failOnPluginError": false
+  },
+  "plugins": {
+    "example-plugin": {
+      "enabled": false,
+      "config": {
+        "logLevel": "info",
+        "customMessage": "Hello from Example Plugin!"
+      }
+    },
+    "react-ecosystem-plugin": {
+      "enabled": true,
+      "config": {
+        "strictMode": true,
+        "checkTypeScriptTypes": true,
+        "warnOnMinorMismatch": false
+      }
+    },
+    "security-audit-plugin": {
+      "enabled": true,
+      "config": {
+        "enableLogging": true,
+        "checkOutdatedPackages": true,
+        "outdatedThresholdYears": 2,
+        "severityFilter": ["high", "medium"],
+        "excludePackages": []
+      }
+    }
+  }
+}

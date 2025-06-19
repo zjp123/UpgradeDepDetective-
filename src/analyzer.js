@@ -2,6 +2,8 @@ import fs from 'fs/promises';
 import path from 'path';
 import axios from 'axios';
 import chalk from 'chalk';
+import { pluginManager } from './plugin-manager.js';
+import { HOOKS } from './plugin-interface.js';
 
 /**
  * 分析项目依赖
@@ -31,13 +33,22 @@ export async function analyzeProject(projectPath) {
         // 清理版本号中的特殊字符(^, ~, >=等)
         const cleanVersion = version.replace(/[^\d.]/g, '');
         
+        // 执行包分析钩子
+        let packageData = {
+          packageName: dep,
+          version: version,
+          cleanVersion: cleanVersion
+        };
+        packageData = await pluginManager.executeHook(HOOKS.ANALYZE_PACKAGE, packageData);
+        
         // 从npm registry获取包信息
         const response = await axios.get(`https://registry.npmjs.org/${dep}`);
         const latestVersion = response.data['dist-tags'].latest;
         
         latestVersions[dep] = {
           current: cleanVersion,
-          latest: latestVersion
+          latest: latestVersion,
+          ...packageData // 包含插件添加的额外信息
         };
         
         process.stdout.write(chalk.green('.'));
